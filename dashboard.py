@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ==========================
-# CONFIGURAÇÃO DA PÁGINA
-# ==========================
 
 st.set_page_config(
     page_title="Dashboard Logístico",
@@ -12,9 +9,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# ==========================
-# ESTILO
-# ==========================
 
 st.markdown("""
 <style>
@@ -24,17 +18,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ==========================
-# LEITURA DA PLANILHA
-# ==========================
 
 dados = pd.read_excel(
     "planilha_dashboard_logistica.xlsx"
 )
 
-# ==========================
-# CÁLCULOS
-# ==========================
 
 total_entregas = len(dados)
 
@@ -46,15 +34,9 @@ taxa = (
     atrasadas / total_entregas
 ) * 100
 
-# ==========================
-# TÍTULO
-# ==========================
+
 
 st.title("📦 Dashboard Logístico")
-
-# ==========================
-# CAIXA DE APRESENTAÇÃO
-# ==========================
 
 st.markdown("""
 <div style="
@@ -76,9 +58,6 @@ regional das operações.
 </div>
 """, unsafe_allow_html=True)
 
-# ==========================
-# KPIs
-# ==========================
 
 col1, col2, col3 = st.columns(3)
 
@@ -99,9 +78,7 @@ col3.metric(
 
 st.divider()
 
-# ==========================
-# ALERTA
-# ==========================
+
 
 if taxa > 20:
 
@@ -125,9 +102,6 @@ if taxa > 20:
     </div>
     """, unsafe_allow_html=True)
 
-# ==========================
-# TRANSPORTADORAS
-# ==========================
 
 atrasos_transportadora = (
     dados[dados["Status"] == "Atrasada"]
@@ -178,10 +152,6 @@ st.plotly_chart(
     use_container_width=True
 )
 
-# ==========================
-# MELHOR TRANSPORTADORA
-# ==========================
-
 melhor_transportadora = (
     atrasos_transportadora
     .sort_values("Atrasos")
@@ -208,10 +178,6 @@ apresentou o menor número de atrasos.
 </div>
 """, unsafe_allow_html=True)
 
-# ==========================
-# REGIÕES
-# ==========================
-
 regioes = (
     dados["Regiao"]
     .value_counts()
@@ -237,10 +203,6 @@ st.plotly_chart(
 
 st.divider()
 
-# ==========================
-# ATRASADAS
-# ==========================
-
 st.subheader("🚨 Entregas Atrasadas")
 
 st.dataframe(
@@ -248,10 +210,6 @@ st.dataframe(
 )
 
 st.divider()
-
-# ==========================
-# BASE COMPLETA
-# ==========================
 
 st.subheader("📋 Base Completa")
 
