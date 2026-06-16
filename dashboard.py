@@ -5,23 +5,26 @@ import plotly.express as px
 
 st.set_page_config(
     page_title="Dashboard Logístico",
-    page_icon="📦",
+    page_icon="🚚",
     layout="wide"
 )
 
-
-st.markdown("""
-<style>
-.stApp {
-    background-color: #F8FAFC;
-}
-</style>
-""", unsafe_allow_html=True)
+st.title("🚚 Dashboard de Análise Logística")
 
 
-dados = pd.read_excel(
-    "planilha_dashboard_logistica.xlsx"
+
+dados = pd.read_excel("planilha_dashboard_logistica.xlsx")
+
+
+regioes = ["Todas"] + list(dados["Regiao"].unique())
+
+regiao_selecionada = st.sidebar.selectbox(
+    "Selecione a Região",
+    regioes
 )
+
+if regiao_selecionada != "Todas":
+    dados = dados[dados["Regiao"] == regiao_selecionada]
 
 
 total_entregas = len(dados)
@@ -30,120 +33,58 @@ atrasadas = len(
     dados[dados["Status"] == "Atrasada"]
 )
 
-taxa = (
-    atrasadas / total_entregas
-) * 100
-
-
-
-st.title("📦 Dashboard Logístico")
-
-st.markdown("""
-<div style="
-background-color:#E3F2FD;
-padding:20px;
-border-radius:15px;
-border-left:8px solid #1E88E5;
-margin-bottom:20px;
-">
-
-<h3>🚚 Monitoramento de Entregas</h3>
-
-<p>
-Este dashboard apresenta informações sobre entregas,
-atrasos, desempenho das transportadoras e distribuição
-regional das operações.
-</p>
-
-</div>
-""", unsafe_allow_html=True)
-
+taxa_atraso = (
+    atrasadas / total_entregas * 100
+    if total_entregas > 0
+    else 0
+)
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric(
-    "📦 Total de Entregas",
-    total_entregas
-)
+with col1:
+    st.metric(
+        "📦 Total de Entregas",
+        total_entregas
+    )
 
-col2.metric(
-    "🚨 Entregas Atrasadas",
-    atrasadas
-)
+with col2:
+    st.metric(
+        "🚨 Entregas Atrasadas",
+        atrasadas
+    )
 
-col3.metric(
-    "📊 Taxa de Atraso",
-    f"{taxa:.1f}%"
-)
-
-st.divider()
-
-
-
-if taxa > 20:
-
-    st.markdown(f"""
-    <div style="
-    background-color:#FFEBEE;
-    padding:15px;
-    border-radius:10px;
-    border-left:8px solid red;
-    margin-bottom:20px;
-    ">
-
-    <h4>🚨 Atenção</h4>
-
-    <p>
-    A taxa de atraso atual é de
-    <b>{taxa:.1f}%</b>.
-    Recomenda-se investigar as causas.
-    </p>
-
-    </div>
-    """, unsafe_allow_html=True)
+with col3:
+    st.metric(
+        "📊 Taxa de Atraso",
+        f"{taxa_atraso:.1f}%"
+    )
 
 
-atrasos_transportadora = (
-    dados[dados["Status"] == "Atrasada"]
-    ["Transportadora"]
-    .value_counts()
-    .reset_index()
-)
+if taxa_atraso > 20:
+    st.error(
+        "⚠️ Atenção! A taxa de atraso está acima de 20%."
+    )
 
-atrasos_transportadora.columns = [
-    "Transportadora",
-    "Atrasos"
-]
 
-menor = atrasos_transportadora["Atrasos"].min()
-maior = atrasos_transportadora["Atrasos"].max()
+st.subheader("🚚 Entregas por Transportadora")
 
-def categoria(valor):
-
-    if valor == menor:
-        return "Melhor"
-
-    elif valor == maior:
-        return "Pior"
-
-    else:
-        return "Intermediária"
-
-atrasos_transportadora["Categoria"] = (
-    atrasos_transportadora["Atrasos"]
-    .apply(categoria)
+grafico_transportadora = (
+    dados.groupby("Transportadora")
+    .size()
+    .reset_index(name="Quantidade")
 )
 
 fig1 = px.bar(
-    atrasos_transportadora,
+      grafico_transportadora,
     x="Transportadora",
-    y="Atrasos",
-    color="Categoria",
-    title="🚚 Atrasos por Transportadora",
+    y="Quantidade",
+    color="Transportadora",
+    template="plotly_white",
+    title="Quantidade de Entregas por Transportadora",
     color_discrete_map={
-        "Melhor": "green",
-        "Intermediária": "gold",
-        "Pior": "red"
+        "LogFast": "#4CAF50",
+        "RapidoSul": "#2196F3",
+        "ExpressoBr": "#FF9800"
     }
 )
 
@@ -152,48 +93,29 @@ st.plotly_chart(
     use_container_width=True
 )
 
-melhor_transportadora = (
-    atrasos_transportadora
-    .sort_values("Atrasos")
-    .iloc[0]["Transportadora"]
+
+
+st.subheader("🌎 Distribuição por Região")
+
+grafico_regiao = (
+    dados.groupby("Regiao")
+    .size()
+    .reset_index(name="Quantidade")
 )
-
-st.markdown(f"""
-<div style="
-background-color:#E8F5E9;
-padding:15px;
-border-radius:10px;
-border-left:8px solid green;
-margin-bottom:20px;
-">
-
-<h4>🏆 Melhor Desempenho</h4>
-
-<p>
-A transportadora
-<b>{melhor_transportadora}</b>
-apresentou o menor número de atrasos.
-</p>
-
-</div>
-""", unsafe_allow_html=True)
-
-regioes = (
-    dados["Regiao"]
-    .value_counts()
-    .reset_index()
-)
-
-regioes.columns = [
-    "Regiao",
-    "Quantidade"
-]
 
 fig2 = px.pie(
-    regioes,
+     grafico_regiao,
     names="Regiao",
     values="Quantidade",
-    title="📍 Distribuição por Região"
+    title="Distribuição das Entregas",
+    color="Regiao",
+    color_discrete_map={
+        "Sul": "#4CAF50",
+        "Sudeste": "#2196F3",
+        "Nordeste": "#FF9800",
+        "Norte": "#9C27B0",
+        "Centro-Oeste": "#F44336"
+    }
 )
 
 st.plotly_chart(
@@ -201,15 +123,14 @@ st.plotly_chart(
     use_container_width=True
 )
 
-st.divider()
 
 st.subheader("🚨 Entregas Atrasadas")
 
-st.dataframe(
-    dados[dados["Status"] == "Atrasada"]
-)
+atrasos = dados[
+    dados["Status"] == "Atrasada"
+]
 
-st.divider()
+st.dataframe(atrasos)
 
 st.subheader("📋 Base Completa")
 
