@@ -15,14 +15,6 @@ st.title("🚚 Dashboard de Análise Logística")
 
 dados = pd.read_excel("planilha_dashboard_logistica.xlsx")
 
-# Informações para diagnóstico
-
-st.write("Arquivo encontrado:")
-st.write(os.path.abspath("planilha_dashboard_logistica.xlsx"))
-
-st.write("Colunas encontradas:")
-st.write(dados.columns.tolist())
-
 # Cria o status automaticamente
 
 dados["Status"] = dados.apply(
